@@ -1,0 +1,51 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClientInstance } from './lib/query-client';
+import { AuthProvider } from './lib/AuthContext';
+import { Toaster } from './components/ui/toaster';
+
+// Layout
+import AppLayout from './components/layout/AppLayout';
+
+// Pages
+import Overview from './pages/Overview';
+import Experiments from './pages/Experiments';
+import Library from './pages/Library';
+import Scheduler from './pages/Scheduler';
+import Services from './pages/Services';
+import Monitoring from './pages/Monitoring';
+import InfraMap from './pages/InfraMap';
+import Alerts from './pages/Alerts';
+import Reports from './pages/Reports';
+import Pipeline from './pages/Pipeline';
+import Settings from './pages/Settings';
+import PageNotFound from './lib/PageNotFound';
+
+export default function App() {
+    return (
+        <QueryClientProvider client={queryClientInstance}>
+            <AuthProvider>
+                <BrowserRouter>
+                    <Routes>
+                        <Route path="/" element={<AppLayout />}>
+                            <Route index element={<Overview />} />
+                            <Route path="experiments" element={<Experiments />} />
+                            <Route path="library" element={<Library />} />
+                            <Route path="scheduler" element={<Scheduler />} />
+                            <Route path="services" element={<Services />} />
+                            <Route path="monitoring" element={<Monitoring />} />
+                            <Route path="infra-map" element={<InfraMap />} />
+                            <Route path="alerts" element={<Alerts />} />
+                            <Route path="reports" element={<Reports />} />
+                            <Route path="pipeline" element={<Pipeline />} />
+                            <Route path="settings" element={<Settings />} />
+                            <Route path="*" element={<PageNotFound />} />
+                        </Route>
+                    </Routes>
+                    <Toaster />
+                </BrowserRouter>
+            </AuthProvider>
+        </QueryClientProvider>
+    );
+}
