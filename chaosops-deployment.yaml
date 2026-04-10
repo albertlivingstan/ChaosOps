@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chaosops
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: chaosops
+  template:
+    metadata:
+      labels:
+        app: chaosops
+    spec:
+      containers:
+      - name: chaosops
+        image: chaosops-app
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
