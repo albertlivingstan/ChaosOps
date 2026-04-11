@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useToast } from '@/components/ui/use-toast';
 import { base44 } from '@/api/base44Client';
 import TopBar from '@/components/layout/TopBar';
 import StatusBadge from '@/components/shared/StatusBadge';
@@ -23,6 +24,7 @@ function MiniBar({ value, color }) {
 }
 
 export default function Services() {
+  const { toast } = useToast();
   const [services, setServices] = useState([]);
   const [experiments, setExperiments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,16 +55,27 @@ export default function Services() {
 
   const handleSave = async () => {
     setSaving(true);
-    if (editTarget) {
-      await base44.entities.Microservice.update(editTarget.id, form);
-    } else {
-      await base44.entities.Microservice.create(form);
+    try {
+      let res;
+      if (editTarget) {
+        res = await base44.entities.Microservice.update(editTarget.id, form);
+      } else {
+        res = await base44.entities.Microservice.create(form);
+      }
+
+      if (!res) {
+        toast({ title: 'Error', description: 'Failed to save service.', variant: 'destructive' });
+        return;
+      }
+
+      setShowForm(false);
+      setEditTarget(null);
+      setForm({ name: '', description: '', language: 'nodejs', status: 'healthy', replicas_desired: 3, replicas_ready: 3, cpu_usage: 30, memory_usage: 45, uptime_percentage: 99.9, avg_latency_ms: 120, version: 'v1.0.0', namespace: 'default' });
+      await load();
+      toast({ title: 'Success', description: 'Service saved successfully.' });
+    } finally {
+      setSaving(false);
     }
-    setShowForm(false);
-    setEditTarget(null);
-    setForm({ name: '', description: '', language: 'nodejs', status: 'healthy', replicas_desired: 3, replicas_ready: 3, cpu_usage: 30, memory_usage: 45, uptime_percentage: 99.9, avg_latency_ms: 120, version: 'v1.0.0', namespace: 'default' });
-    await load();
-    setSaving(false);
   };
 
   const handleDelete = async (id) => {

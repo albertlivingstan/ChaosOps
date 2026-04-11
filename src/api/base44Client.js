@@ -21,28 +21,40 @@ const makeEntity = (entityName) => ({
   },
 
   create: async (data) => {
-    const res = await fetch(`${apiUrl}/${entityName}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return await res.json();
+    try {
+      const res = await fetch(`${apiUrl}/${entityName}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 
   update: async (id, data) => {
-    const res = await fetch(`${apiUrl}/${entityName}/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return await res.json();
+    try {
+      const res = await fetch(`${apiUrl}/${entityName}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 
   delete: async (id) => {
-    const res = await fetch(`${apiUrl}/${entityName}/${id}`, {
-      method: 'DELETE'
-    });
-    return await res.json();
+    try {
+      const res = await fetch(`${apiUrl}/${entityName}/${id}`, {
+        method: 'DELETE'
+      });
+      return await res.json();
+    } catch {
+      return { success: false };
+    }
   },
 });
 
