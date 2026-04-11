@@ -1,4 +1,4 @@
-const apiUrl = 'http://localhost:3001/api';
+const apiUrl = import.meta.env.PROD ? '/api' : 'http://localhost:3001/api';
 
 const makeEntity = (entityName) => ({
   list: async (sort = '', limit = 100) => {

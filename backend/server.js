@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect('mongodb://localhost:27017/ChaosOpsStats').then(() => console.log('MongoDB connected'));
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/ChaosOpsStats').then(() => console.log('MongoDB connected'));
 
 // Helpful message for the root route
 app.get('/', (req, res) => {
