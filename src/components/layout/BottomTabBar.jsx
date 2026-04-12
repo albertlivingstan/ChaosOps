@@ -1,11 +1,12 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Zap, BookOpen, Map, Bell, Settings } from 'lucide-react';
+import { LayoutDashboard, Zap, BookOpen, Map, Bell, Settings, Globe } from 'lucide-react';
 
 const tabs = [
   { path: '/', label: 'Overview', icon: LayoutDashboard },
   { path: '/experiments', label: 'Chaos', icon: Zap },
   { path: '/library', label: 'Library', icon: BookOpen },
+  { path: '/web-analyzer', label: 'Web', icon: Globe },
   { path: '/infra-map', label: 'Infra', icon: Map },
   { path: '/alerts', label: 'Alerts', icon: Bell },
   { path: '/settings', label: 'Settings', icon: Settings },

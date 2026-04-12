@@ -20,6 +20,8 @@ import Alerts from './pages/Alerts';
 import Reports from './pages/Reports';
 import Pipeline from './pages/Pipeline';
 import Settings from './pages/Settings';
+import WebAnalyzer from './pages/WebAnalyzer';
+import MonitorHistory from './pages/MonitorHistory';
 import PageNotFound from './lib/PageNotFound';
 
 export default function App() {
@@ -35,6 +37,8 @@ export default function App() {
                             <Route path="scheduler" element={<Scheduler />} />
                             <Route path="services" element={<Services />} />
                             <Route path="monitoring" element={<Monitoring />} />
+                            <Route path="web-analyzer" element={<WebAnalyzer />} />
+                            <Route path="monitor-history" element={<MonitorHistory />} />
                             <Route path="infra-map" element={<InfraMap />} />
                             <Route path="alerts" element={<Alerts />} />
                             <Route path="reports" element={<Reports />} />

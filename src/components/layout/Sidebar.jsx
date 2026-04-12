@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, Zap, Server, Bell, Activity, GitBranch, Settings, ChevronRight, FileText,
-  BookOpen, Calendar, Map
+  BookOpen, Calendar, Map, Globe, History
 } from 'lucide-react';
 
 const navGroups = [
@@ -20,6 +20,8 @@ const navGroups = [
     items: [
       { path: '/services', label: 'Services', icon: Server },
       { path: '/monitoring', label: 'Monitoring', icon: Activity },
+      { path: '/web-analyzer', label: 'Web Analyzer', icon: Globe },
+      { path: '/monitor-history', label: 'Monitor History', icon: History },
       { path: '/infra-map', label: 'Infra Map', icon: Map },
       { path: '/alerts', label: 'Alerts', icon: Bell },
       { path: '/reports', label: 'Reports', icon: FileText },

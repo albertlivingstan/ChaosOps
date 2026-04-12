@@ -70,6 +70,7 @@ export const base44 = {
     SystemAlert: makeEntity('SystemAlert'),
     ExperimentTemplate: makeEntity('ExperimentTemplate'),
     ScheduledExperiment: makeEntity('ScheduledExperiment'),
-    Setting: makeEntity('Setting')
+    Setting: makeEntity('Setting'),
+    MonitoredWebsite: makeEntity('MonitoredWebsite')
   }
 };
