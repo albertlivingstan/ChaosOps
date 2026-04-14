@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClientInstance } from './lib/query-client';
@@ -7,6 +8,7 @@ import { Toaster } from './components/ui/toaster';
 
 // Layout
 import AppLayout from './components/layout/AppLayout';
+import SplashScreen from './components/SplashScreen';
 
 // Pages
 import Overview from './pages/Overview';
@@ -25,8 +27,13 @@ import MonitorHistory from './pages/MonitorHistory';
 import PageNotFound from './lib/PageNotFound';
 
 export default function App() {
+    const [showSplash, setShowSplash] = useState(true);
+
     return (
         <QueryClientProvider client={queryClientInstance}>
+            <AnimatePresence>
+                {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
+            </AnimatePresence>
             <AuthProvider>
                 <BrowserRouter>
                     <Routes>
