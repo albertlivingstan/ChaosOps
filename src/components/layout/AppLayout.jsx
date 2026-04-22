@@ -43,7 +43,7 @@ export default function AppLayout() {
         {/* Global Developer Footer */}
         <footer className="w-full py-8 mt-12 border-t border-slate-800/40 text-center">
             <p className="text-slate-500 text-xs tracking-widest font-light uppercase">
-                Developed by <a href="https://githubio-ten.vercel.app" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition-colors underline decoration-slate-700 hover:decoration-white underline-offset-4 font-medium tracking-normal lowercase">albertlivingstan.dev.com</a>
+                Developed by <a href="https://albertcom.vercel.app" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition-colors underline decoration-slate-700 hover:decoration-white underline-offset-4 font-medium tracking-normal lowercase">albertlivingstan.dev.com</a>
             </p>
         </footer>
       </main>

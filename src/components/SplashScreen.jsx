@@ -161,7 +161,7 @@ export default function SplashScreen({ onComplete }) {
                 className="absolute bottom-8 w-full text-center z-20"
             >
                 <p className="text-slate-500 text-xs md:text-sm tracking-widest font-light">
-                    DEVELOPED BY <a href="https://githubio-ten.vercel.app" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors underline decoration-slate-600 hover:decoration-white underline-offset-4 font-medium tracking-normal">albertlivingstan.dev.com</a>
+                    DEVELOPED BY <a href="https://albertcom.vercel.app" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors underline decoration-slate-600 hover:decoration-white underline-offset-4 font-medium tracking-normal">albertlivingstan.dev.com</a>
                 </p>
             </motion.div>
         </motion.div>
