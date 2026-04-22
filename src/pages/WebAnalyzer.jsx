@@ -26,19 +26,33 @@ export default function WebAnalyzer() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url })
       });
+      
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Server error occurred during analysis');
+      }
       
       // Remap icons since JSON drops component references
-      if (data.stats) {
+      if (data.stats && data.stats.length >= 3) {
         data.stats[0].icon = Gauge; data.stats[0].colorClass = data.stats[0].value.includes('0/100') ? 'bg-destructive/20 text-destructive' : 'bg-primary/20 text-primary';
         data.stats[1].icon = Shield; data.stats[1].colorClass = data.stats[1].value.includes('F') ? 'bg-destructive/20 text-destructive' : 'bg-warning/20 text-warning';
         data.stats[2].icon = Activity; data.stats[2].colorClass = data.stats[2].value.includes('42') ? 'bg-destructive/20 text-destructive' : 'bg-success/20 text-success';
       }
       
       setResults(data);
-      toast({ title: "Analysis Complete", description: `Successfully analyzed ${new URL(data.url || url).hostname}` });
+      
+      let hostname = url;
+      try { hostname = new URL(data.url || (url.startsWith('http') ? url : `https://${url}`)).hostname; } catch (e) {}
+      
+      toast({ title: "Analysis Complete", description: `Successfully analyzed ${hostname}` });
     } catch (e) {
-      toast({ title: "Analysis Failed", description: "Could not complete analysis", variant: "destructive" });
+      const isConnectionError = e.message === 'Failed to fetch' || e.message === 'Load failed' || e.message.includes('fetch');
+      toast({ 
+        title: "Analysis Failed", 
+        description: isConnectionError ? "Could not connect to backend server." : (e.message || "Could not complete analysis"), 
+        variant: "destructive" 
+      });
     } finally {
       setIsAnalyzing(false);
     }

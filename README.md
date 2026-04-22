@@ -1,76 +1,70 @@
 # ChaosOps
 
-## Description
-ChaosOps is a comprehensive, enterprise-grade web platform for orchestrating chaos engineering experiments, monitoring infrastructure health, and managing continuous deployment pipelines. It provides a highly intuitive, modern, dark-themed ("deep space navy") user interface built with React. The robust Node.js backend manages test metrics, analytics, scheduled tasks, and real-time microservice statuses. 
+![ChaosOps Banner](https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2000&auto=format&fit=crop)
 
-This tool empowers Site Reliability Engineers (SREs) and DevOps teams to preemptively discover system vulnerabilities by safely injecting failures into their infrastructure.
+## Overview
+ChaosOps is a powerful, modern platform for performing Chaos Engineering, uptime monitoring, and vulnerability analysis across your infrastructure endpoints. It provides an intuitive, high-performance deep-space-themed React frontend tightly integrated with an easily deployable SQLite-backed Node.js/Express server.
+
+This project is tailored specifically for simple deployment to modern serverless platforms like **Vercel** with absolutely zero external database dependencies.
+
+## Features
+- **Zero-Configuration Backend**: Uses a serverless-friendly SQLite database via Sequelize. No MongoDB installations required.
+- **Web Analyzer**: Scan websites instantly for vulnerabilities and missing security policies.
+- **Chaos Injection**: Track and orchestrate system failures and resiliency monitoring.
+- **Vercel Ready**: Out-of-the-box support for Vercel's Serverless Functions layer. The `/api` routes are securely intercepted and dynamically handled alongside the React application.
 
 ## Technologies Used
-- **Frontend**: React 18, Vite, Tailwind CSS, Radix UI Primitives, Recharts, Framer Motion
-- **Backend**: Node.js, Express, Socket.io
-- **Database**: MongoDB (Mongoose ORM)
-- **Deployment & Orchestration**: Docker, Kubernetes (Manifests included)
+- **Frontend**: React 18, Vite, Tailwind CSS, Radix UI Primitives, Framer Motion
+- **Backend API**: Serverless Node.js, Express.js
+- **Database**: SQLite (via Sequelize ORM)
 
-## Prerequisites
-To run this project locally, you will need:
-- Node.js (v18 or higher recommended)
-- MongoDB running locally on port `27017`
-- Docker (optional, for containerized deployments)
+---
 
-## Local Development Setup
+## Deploying to Vercel (Recommended)
 
-Follow these commands to get your local environment up and running:
+Because this repository consolidates the frontend and backend with a zero-config SQLite layer, deploying to Vercel is as easy as an import:
 
-### 1. Start MongoDB
-Ensure MongoDB is running locally on the default port (`27017`).
-If you have Docker installed, you can easily spin up a local MongoDB instance with:
+1. Push your repository to GitHub, GitLab, or Bitbucket.
+2. Go to your [Vercel Dashboard](https://vercel.com/new).
+3. Import your `ChaosOps` repository.
+4. **Framework Preset**: Let Vercel auto-detect **Vite**.
+5. **Build Command**: Leave default (`npm run build`).
+6. **Output Directory**: Leave default (`dist`).
+7. **Deploy!**
+
+The provided `vercel.json` and `/api/index.js` bridge the Express.js application dynamically, automatically hosting your endpoints safely on Vercel's Serverless Edge. *Note: Data persistence across serverless cold starts relies on Vercel's ephemeral `/tmp` cache.*
+
+---
+
+## Running Locally
+
+If you'd like to develop and test ChaosOps on your own workstation:
+
+### 1. Install Dependencies
+Run this in the root directory to install all required dependencies for both frontend and backend:
 ```bash
-docker run -d -p 27017:27017 --name chaosops-mongo mongo
+npm install
 ```
 
 ### 2. Start the Backend API Server
-Open a terminal, navigate to the `backend` directory, install dependencies, and start the server:
+In a terminal, start the Express/SQLite process:
 ```bash
-cd backend
-npm install
-node server.js
+node backend/server.js
 ```
-The Node.js backend server will launch on `http://localhost:3001` and connect to the local MongoDB instance (`mongodb://localhost:27017/ChaosOpsStats`).
+The console will confirm `SQLite database connected & synced`. Make sure it stays running in the background.
 
 ### 3. Start the Frontend Application
-Open a new terminal window, navigate to the project root directory, install frontend dependencies, and start the Vite development server:
+In a new terminal, launch the Vite dev server:
 ```bash
-npm install
 npm run dev
 ```
-The React frontend user interface will be available at `http://localhost:5173` (or another port depending on Vite's allocation). 
+
+Your powerful dashboard will immediately be available at `http://localhost:5173`. 
+
+---
 
 ## Project Structure
 - `/src` — Frontend source code including UI components, Pages, routing, and API client hooks.
-- `/backend` — Backend source code, primarily `server.js` containing the Express server, API endpoints, and MongoDB schemas.
-- `docker-compose.yml` — Compose file to orchestrate building the frontend and backend Docker containers.
-- `Dockerfile` & `/backend/Dockerfile` — Definitions for building the Docker images.
-- `chaosops-deployment.yaml` & `chaosops-service.yaml` — Kubernetes manifests to deploy and expose the ChaosOps service inside a cluster.
-- `setup_backend.js` — Script to seed the MongoDB database with initial sample data for experiments and templates.
-
-## Database Seeding
-If you are starting fresh and want some sample microservice data, experiment templates, and run histories, there is a seed script included.
-Make sure your MongoDB is running and execute:
-```bash
-node setup_backend.js
-```
-
-## Production Deployment
-
-### Docker Compose
-You can run both the frontend and backend behind a unified stack using Docker Compose. Note: If you want MongoDB included inside the stack, uncomment the `mongo` block in `docker-compose.yml`.
-```bash
-docker compose up --build -d
-```
-
-### Kubernetes
-To deploy the application to your Kubernetes cluster:
-```bash
-kubectl apply -f chaosops-deployment.yaml
-kubectl apply -f chaosops-service.yaml
-```
+- `/backend/server.js` — The core logic, SQLite Data models, API endpoints, and web-analysis tools.
+- `/api/index.js` — Vercel Serverless Function entry point bridging Vite and Express.
+- `vercel.json` — Vercel routing configuration enforcing SPA proxy rules.

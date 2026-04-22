@@ -1,120 +1,153 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const { Server } = require('socket.io');
+const { Sequelize, DataTypes, Op } = require('sequelize');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/ChaosOpsStats').then(() => console.log('MongoDB connected'));
+// SQLite setup
+const storagePath = process.env.VERCEL ? '/tmp/database.sqlite' : './database.sqlite';
+const sequelize = new Sequelize({
+    dialect: 'sqlite',
+    storage: storagePath,
+    logging: false
+});
+
+// Models using Sequelize
+const ChaosExperiment = sequelize.define('ChaosExperiment', {
+    name: { type: DataTypes.STRING, allowNull: false },
+    description: DataTypes.STRING,
+    target_service: { type: DataTypes.STRING, allowNull: false },
+    chaos_type: { type: DataTypes.STRING, allowNull: false },
+    intensity: { type: DataTypes.STRING, allowNull: false },
+    duration_seconds: DataTypes.INTEGER,
+    status: { type: DataTypes.STRING, defaultValue: 'pending' },
+    started_at: DataTypes.DATE,
+    completed_at: DataTypes.DATE,
+    result_summary: DataTypes.STRING,
+    recovery_time_seconds: DataTypes.INTEGER,
+    auto_abort: { type: DataTypes.BOOLEAN, defaultValue: true },
+    created_date: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+});
+
+const ExperimentTemplate = sequelize.define('ExperimentTemplate', {
+    name: { type: DataTypes.STRING, allowNull: false },
+    description: DataTypes.STRING,
+    chaos_type: { type: DataTypes.STRING, allowNull: false },
+    intensity: { type: DataTypes.STRING, allowNull: false },
+    duration_seconds: { type: DataTypes.INTEGER, defaultValue: 60 },
+    tags: {
+        type: DataTypes.STRING,
+        get() {
+            const rawValue = this.getDataValue('tags');
+            return rawValue ? JSON.parse(rawValue) : [];
+        },
+        set(value) {
+            this.setDataValue('tags', JSON.stringify(value || []));
+        }
+    },
+    auto_abort: { type: DataTypes.BOOLEAN, defaultValue: true },
+    steady_state_latency_ms: { type: DataTypes.INTEGER, defaultValue: 200 },
+    steady_state_error_rate: { type: DataTypes.INTEGER, defaultValue: 1 },
+    use_count: { type: DataTypes.INTEGER, defaultValue: 0 },
+    created_date: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+});
+
+const Microservice = sequelize.define('Microservice', {
+    name: { type: DataTypes.STRING, allowNull: false },
+    description: DataTypes.STRING,
+    language: { type: DataTypes.STRING, allowNull: false },
+    status: { type: DataTypes.STRING, defaultValue: 'healthy' },
+    replicas_desired: { type: DataTypes.INTEGER, defaultValue: 3 },
+    replicas_ready: { type: DataTypes.INTEGER, defaultValue: 3 },
+    cpu_usage: DataTypes.FLOAT,
+    memory_usage: DataTypes.FLOAT,
+    uptime_percentage: DataTypes.FLOAT,
+    avg_latency_ms: DataTypes.FLOAT,
+    requests_per_second: DataTypes.FLOAT,
+    namespace: { type: DataTypes.STRING, defaultValue: 'default' },
+    version: DataTypes.STRING,
+    updated_date: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+});
+
+const ScheduledExperiment = sequelize.define('ScheduledExperiment', {
+    name: { type: DataTypes.STRING, allowNull: false },
+    target_service: { type: DataTypes.STRING, allowNull: false },
+    chaos_type: { type: DataTypes.STRING, allowNull: false },
+    intensity: { type: DataTypes.STRING, allowNull: false },
+    duration_seconds: { type: DataTypes.INTEGER, defaultValue: 60 },
+    scheduled_at: { type: DataTypes.DATE, allowNull: false },
+    recurrence: { type: DataTypes.STRING, defaultValue: 'none' },
+    status: { type: DataTypes.STRING, defaultValue: 'scheduled' },
+    gameday_mode: { type: DataTypes.BOOLEAN, defaultValue: false },
+    notes: DataTypes.STRING,
+    created_date: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+});
+
+const SystemAlert = sequelize.define('SystemAlert', {
+    title: { type: DataTypes.STRING, allowNull: false },
+    message: { type: DataTypes.STRING, allowNull: false },
+    severity: { type: DataTypes.STRING, defaultValue: 'info' },
+    source_service: DataTypes.STRING,
+    acknowledged: { type: DataTypes.BOOLEAN, defaultValue: false },
+    resolved: { type: DataTypes.BOOLEAN, defaultValue: false },
+    alert_type: DataTypes.STRING,
+    created_date: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+});
+
+const Setting = sequelize.define('Setting', {
+    type: { type: DataTypes.STRING, defaultValue: 'global' },
+    integrations: {
+        type: DataTypes.STRING,
+        get() {
+            const val = this.getDataValue('integrations');
+            return val ? JSON.parse(val) : {};
+        },
+        set(val) {
+            this.setDataValue('integrations', JSON.stringify(val || {}));
+        }
+    },
+    githubConfig: {
+        type: DataTypes.STRING,
+        get() {
+            const val = this.getDataValue('githubConfig');
+            return val ? JSON.parse(val) : {};
+        },
+        set(val) {
+            this.setDataValue('githubConfig', JSON.stringify(val || {}));
+        }
+    }
+});
+
+const MonitoredWebsite = sequelize.define('MonitoredWebsite', {
+    url: { type: DataTypes.STRING, allowNull: false },
+    last_analyzed: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+    status: { type: DataTypes.STRING, defaultValue: 'Active' },
+    performance_score: DataTypes.INTEGER,
+    bugs_rectified: { type: DataTypes.INTEGER, defaultValue: 0 },
+    is_daily_monitor: { type: DataTypes.BOOLEAN, defaultValue: false },
+    created_date: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+});
+
+const models = {
+    ChaosExperiment,
+    ExperimentTemplate,
+    Microservice,
+    ScheduledExperiment,
+    SystemAlert,
+    Setting,
+    MonitoredWebsite
+};
+
+// Sync database
+sequelize.sync().then(() => console.log('SQLite database connected & synced'));
 
 // Helpful message for the root route
 app.get('/', (req, res) => {
-    res.send('<h1>ChaosOps Backend API is Running</h1><p>You have accessed the backend server. The actual ChaosOps user interface is running on Vite. Please go to: <a href="http://localhost:5173">http://localhost:5173</a></p>');
+    res.send('<h1>ChaosOps Backend API is Running on SQLite</h1><p>You have accessed the backend server. The actual ChaosOps user interface is running on Vite. Please go to: <a href="http://localhost:5173">http://localhost:5173</a></p>');
 });
-
-// Models
-const transform = (doc, ret) => { ret.id = ret._id; delete ret._id; delete ret.__v; };
-const schemaOptions = { toJSON: { virtuals: true, transform } };
-
-const ChaosExperimentSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    description: String,
-    target_service: { type: String, required: true },
-    chaos_type: { type: String, required: true },
-    intensity: { type: String, required: true },
-    duration_seconds: Number,
-    status: { type: String, default: 'pending' },
-    started_at: Date,
-    completed_at: Date,
-    result_summary: String,
-    recovery_time_seconds: Number,
-    auto_abort: { type: Boolean, default: true },
-    created_date: { type: Date, default: Date.now }
-}, schemaOptions);
-
-const ExperimentTemplateSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    description: String,
-    chaos_type: { type: String, required: true },
-    intensity: { type: String, required: true },
-    duration_seconds: { type: Number, default: 60 },
-    tags: [String],
-    auto_abort: { type: Boolean, default: true },
-    steady_state_latency_ms: { type: Number, default: 200 },
-    steady_state_error_rate: { type: Number, default: 1 },
-    use_count: { type: Number, default: 0 },
-    created_date: { type: Date, default: Date.now }
-}, schemaOptions);
-
-const MicroserviceSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    description: String,
-    language: { type: String, required: true },
-    status: { type: String, default: 'healthy' },
-    replicas_desired: { type: Number, default: 3 },
-    replicas_ready: { type: Number, default: 3 },
-    cpu_usage: Number,
-    memory_usage: Number,
-    uptime_percentage: Number,
-    avg_latency_ms: Number,
-    requests_per_second: Number,
-    namespace: { type: String, default: 'default' },
-    version: String,
-    updated_date: { type: Date, default: Date.now }
-}, schemaOptions);
-
-const ScheduledExperimentSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    target_service: { type: String, required: true },
-    chaos_type: { type: String, required: true },
-    intensity: { type: String, required: true },
-    duration_seconds: { type: Number, default: 60 },
-    scheduled_at: { type: Date, required: true },
-    recurrence: { type: String, default: 'none' },
-    status: { type: String, default: 'scheduled' },
-    gameday_mode: { type: Boolean, default: false },
-    notes: String,
-    created_date: { type: Date, default: Date.now }
-}, schemaOptions);
-
-const SystemAlertSchema = new mongoose.Schema({
-    title: { type: String, required: true },
-    message: { type: String, required: true },
-    severity: { type: String, default: 'info' },
-    source_service: String,
-    acknowledged: { type: Boolean, default: false },
-    resolved: { type: Boolean, default: false },
-    alert_type: { type: String },
-    created_date: { type: Date, default: Date.now }
-}, schemaOptions);
-
-const SettingSchema = new mongoose.Schema({
-    type: { type: String, default: 'global' },
-    integrations: mongoose.Schema.Types.Mixed,
-    githubConfig: mongoose.Schema.Types.Mixed,
-}, schemaOptions);
-
-const MonitoredWebsiteSchema = new mongoose.Schema({
-    url: { type: String, required: true },
-    last_analyzed: { type: Date, default: Date.now },
-    status: { type: String, default: 'Active' },
-    performance_score: Number,
-    bugs_rectified: { type: Number, default: 0 },
-    is_daily_monitor: { type: Boolean, default: false },
-    created_date: { type: Date, default: Date.now }
-}, schemaOptions);
-
-const models = {
-    ChaosExperiment: mongoose.model('ChaosExperiment', ChaosExperimentSchema),
-    ExperimentTemplate: mongoose.model('ExperimentTemplate', ExperimentTemplateSchema),
-    Microservice: mongoose.model('Microservice', MicroserviceSchema),
-    ScheduledExperiment: mongoose.model('ScheduledExperiment', ScheduledExperimentSchema),
-    SystemAlert: mongoose.model('SystemAlert', SystemAlertSchema),
-    Setting: mongoose.model('Setting', SettingSchema),
-    MonitoredWebsite: mongoose.model('MonitoredWebsite', MonitoredWebsiteSchema)
-};
 
 // API Routes
 app.post('/api/analyze-url', async (req, res) => {
@@ -171,11 +204,12 @@ app.post('/api/analyze-url', async (req, res) => {
         ];
 
         // Ensure record exists in MonitoredWebsite
-        await models.MonitoredWebsite.findOneAndUpdate(
-            { url: targetUrl },
-            { last_analyzed: new Date(), performance_score: perfScore, $setOnInsert: { created_date: new Date() } },
-            { upsert: true }
-        );
+        let website = await models.MonitoredWebsite.findOne({ where: { url: targetUrl } });
+        if (website) {
+            await website.update({ last_analyzed: new Date(), performance_score: perfScore });
+        } else {
+            await models.MonitoredWebsite.create({ url: targetUrl, last_analyzed: new Date(), performance_score: perfScore, created_date: new Date() });
+        }
 
         res.json({
             url: targetUrl,
@@ -196,11 +230,11 @@ app.get('/api/:entity', async (req, res) => {
         const Model = models[req.params.entity];
         if (!Model) return res.status(404).json({ error: 'Not found' });
         
-        let sort = {};
+        let order = [];
         if (req.query.sort) {
-            const dir = req.query.sort.startsWith('-') ? -1 : 1;
-            sort[req.query.sort.replace('-', '')] = dir;
-            delete req.query.sort;
+            const dir = req.query.sort.startsWith('-') ? 'DESC' : 'ASC';
+            const field = req.query.sort.replace('-', '');
+            order.push([field, dir]);
         }
         
         // Remove known query params used by sdk
@@ -210,7 +244,7 @@ app.get('/api/:entity', async (req, res) => {
         let limit = 100;
         if (req.query.limit) limit = parseInt(req.query.limit);
 
-        const items = await Model.find(queryParams).sort(sort).limit(limit);
+        const items = await Model.findAll({ where: queryParams, order, limit });
         res.json(items);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -219,8 +253,7 @@ app.post('/api/:entity', async (req, res) => {
     try {
         const Model = models[req.params.entity];
         if (!Model) return res.status(404).json({ error: 'Not found' });
-        const item = new Model(req.body);
-        await item.save();
+        const item = await Model.create(req.body);
         res.status(201).json(item);
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
@@ -228,7 +261,10 @@ app.post('/api/:entity', async (req, res) => {
 app.put('/api/:entity/:id', async (req, res) => {
     try {
         const Model = models[req.params.entity];
-        const item = await Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const item = await Model.findByPk(req.params.id);
+        if (!item) return res.status(404).json({ error: 'Not found' });
+        
+        await item.update(req.body);
         res.json(item);
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
@@ -236,14 +272,21 @@ app.put('/api/:entity/:id', async (req, res) => {
 app.delete('/api/:entity/:id', async (req, res) => {
     try {
         const Model = models[req.params.entity];
-        await Model.findByIdAndDelete(req.params.id);
+        const item = await Model.findByPk(req.params.id);
+        if (item) {
+            await item.destroy();
+        }
         res.json({ success: true });
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-const server = app.listen(3001, () => {
-    console.log('Backend server running on http://localhost:3001');
-});
+if (require.main === module) {
+    const server = app.listen(3001, () => {
+        console.log('Backend server running on http://localhost:3001');
+    });
 
-const io = new Server(server, { cors: { origin: '*' } });
-io.on('connection', socket => console.log('Client connected'));
+    const io = new Server(server, { cors: { origin: '*' } });
+    io.on('connection', socket => console.log('Client connected'));
+}
+
+module.exports = app;
